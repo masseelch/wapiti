@@ -6,3 +6,7 @@ import "entgo.io/ent"
 type Pet struct {
 	ent.Schema
 }
+
+func (Pet) Fields() []ent.Field {
+	return nil
+}

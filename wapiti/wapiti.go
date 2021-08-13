@@ -1,9 +1,9 @@
 package wapiti
 
 import (
-	"entgo.io/ent/entc"
-	"entgo.io/ent/entc/gen"
+	"entgo.io/ent/entc/load"
 	"fmt"
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/masseelch/wapiti/wapiti/config"
 	"go/ast"
 	"go/parser"
@@ -12,14 +12,14 @@ import (
 )
 
 type Wapiti struct {
-	cfg   *config.Config
-	graph *gen.Graph
-	fset  *token.FileSet
-	ast   *ast.Package
+	cfg  *config.Config
+	spec *load.SchemaSpec
+	fset *token.FileSet
+	ast  *ast.Package
 }
 
 func New(cfg *config.Config) (*Wapiti, error) {
-	g, err := entc.LoadGraph(cfg.SchemaPath, &gen.Config{})
+	spec, err := (&load.Config{Path: cfg.SchemaPath}).Load()
 	if err != nil {
 		return nil, err
 	}
@@ -29,20 +29,20 @@ func New(cfg *config.Config) (*Wapiti, error) {
 		return nil, err
 	}
 	return &Wapiti{
-		cfg:   cfg,
-		graph: g,
-		fset:  fset,
-		ast:   tree[filepath.Base(g.Schema)],
+		cfg:  cfg,
+		spec: spec,
+		fset: fset,
+		ast:  tree[filepath.Base(spec.PkgPath)],
 	}, nil
 }
 
-// Reload reloads the ent graph from the file system and re-parses the ast.
+// Reload reloads the ent spec from the file system and re-parses the ast.
 func (w *Wapiti) Reload() error {
 	n, err := New(w.cfg)
 	if err != nil {
 		return err
 	}
-	w.graph = n.graph
+	w.spec = n.spec
 	w.fset = n.fset
 	w.ast = n.ast
 	return nil
@@ -50,13 +50,23 @@ func (w *Wapiti) Reload() error {
 
 // Run runs the interactive cli, asking questions how to change the schema.
 func (w *Wapiti) Run() error {
+	// Select the node to edit.
 	n, err := w.SelectNode()
 	if err != nil {
-		return err
+		return fmt.Errorf(aurora.Red("ERROR: %w").String(), err)
 	}
 	if n == nil {
-		// fmt.Printf(greenBG("\t\t\t\nSuccess\n\t\t\t"))
+		fmt.Println(aurora.Green("Success!").Bold())
 	}
-	fmt.Println(n)
+	for {
+		f, err := w.NewField(n)
+		if err != nil {
+			return err
+		}
+		if f == nil {
+			break
+		}
+		fmt.Println("TODO: Add message here")
+	}
 	return nil
 }

@@ -17,10 +17,11 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"github.com/masseelch/wapiti/wapiti"
 	"github.com/masseelch/wapiti/wapiti/config"
 	"github.com/spf13/cobra"
-	"log"
+	"os"
 )
 
 var cfg *config.Config
@@ -49,6 +50,7 @@ func init() {
 
 func fatalOnErr(err error) {
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("\n%s\n", err)
+		os.Exit(1)
 	}
 }
